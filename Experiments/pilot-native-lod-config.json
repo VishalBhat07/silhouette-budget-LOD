@@ -1,0 +1,4 @@
+{
+  "finestToCoarsestThresholds": [0.28, 0.16, 0.085, 0.0],
+  "multipliers": [0.5, 1.0, 2.0]
+}

@@ -12,6 +12,7 @@ namespace Workbench
     public static class PilotReplay
     {
         const string ScenePath = "Assets/Workbench/Scenes/Inspection.unity";
+        enum ReplayKind { Greedy, Exact, Native }
 
         [Serializable]
         sealed class Trace
@@ -30,6 +31,13 @@ namespace Workbench
         }
 
         [Serializable]
+        sealed class NativeConfig
+        {
+            public float[] finestToCoarsestThresholds;
+            public float[] multipliers;
+        }
+
+        [Serializable]
         sealed class RunInfo
         {
             public string unityVersion, graphicsApi, sceneDependencyHash, allocator;
@@ -38,13 +46,18 @@ namespace Workbench
         }
 
         [MenuItem("Workbench/Run Pilot Perspective Replay")]
-        public static void Run() => Run(false);
+        public static void Run() => Run(ReplayKind.Greedy);
 
         [MenuItem("Workbench/Run Pilot Exact-Cost Replay")]
-        public static void RunExact() => Run(true);
+        public static void RunExact() => Run(ReplayKind.Exact);
 
-        static void Run(bool exact)
+        [MenuItem("Workbench/Run Pilot Native LODGroup Replay")]
+        public static void RunNative() => Run(ReplayKind.Native);
+
+        static void Run(ReplayKind kind)
         {
+            var exact = kind == ReplayKind.Exact;
+            var native = kind == ReplayKind.Native;
             var scene = SceneManager.GetActiveScene();
             if (Application.isPlaying || scene.path != ScenePath || scene.isDirty)
                 throw new InvalidOperationException("Open and save Inspection in Edit Mode before running the replay.");
@@ -64,6 +77,20 @@ namespace Workbench
                 .Distinct().ToArray();
             var scoreBuffer = costs.Select(row => new float[row.Length]).ToArray();
             var visibility = new bool[parts.Count];
+            var nativeText = native ? File.ReadAllText(Path.Combine(root, "Experiments/pilot-native-lod-config.json")) : null;
+            var nativeConfig = native ? JsonUtility.FromJson<NativeConfig>(nativeText) : null;
+            using var nativeProbe = native ? new NativeLodProbe(config.width, config.height) : null;
+            if (native)
+            {
+                if (nativeConfig.multipliers == null || nativeConfig.multipliers.Length == 0 ||
+                    nativeConfig.multipliers.Any(m => !(m > 0)) ||
+                    nativeConfig.multipliers.Distinct().Count() != nativeConfig.multipliers.Length ||
+                    nativeConfig.finestToCoarsestThresholds == null)
+                    throw new InvalidOperationException("Native replay requires distinct positive multipliers and shared thresholds.");
+                foreach (var part in parts)
+                    nativeProbe.AddPart(Enumerable.Range(0, part.FinestLevel + 1).Select(part.MeshAt).ToArray(),
+                        part.transform.position, part.transform.rotation, part.transform.lossyScale);
+            }
 
             var occluders = new[] { GameObject.Find("Ground"), GameObject.Find("Workbench") }
                 .SelectMany(go => go.GetComponentsInChildren<MeshFilter>())
@@ -83,7 +110,7 @@ namespace Workbench
                 transforms[parts.Count + i] = occluders[i].transform.localToWorldMatrix;
             }
 
-            var observations = new StringBuilder("trace,frame,cap,policy,spent,part_id,level,triangles," +
+            var observations = new StringBuilder($"trace,frame,{(native ? "threshold_scale" : "cap")},policy,spent,part_id,level,triangles," +
                 "reference_pixels,candidate_pixels,intersection_pixels,union_pixels,nearest_bake_angle_deg\n");
             var poses = new StringBuilder("trace,frame,px,py,pz,qx,qy,qz,qw,vertical_fov_deg\n");
             var levels = new int[parts.Count];
@@ -114,40 +141,56 @@ namespace Workbench
                     for (var part = 0; part < parts.Count; part++)
                         meshes[part] = parts[part].MeshAt(parts[part].FinestLevel);
                     var reference = capture.Capture(camera, meshes, transforms, ids);
-                    foreach (var cap in effectiveCaps)
-                    foreach (var policy in policies)
+                    if (native)
                     {
-                        int spent;
-                        if (exact)
+                        foreach (var scale in nativeConfig.multipliers)
                         {
-                            controller.ScorePose(camera, policy, scoreBuffer, visibility);
-                            if (visibility.Any(visible => !visible) ||
-                                !ExactCostLod.TrySelect(costs, scoreBuffer, cap, levels))
-                                throw new InvalidOperationException($"Cannot match exact cost at {trace.id}/{frame}.");
-                            spent = costs.Select((row, part) => row[levels[part]]).Sum();
-                            if (spent != cap)
-                                throw new InvalidOperationException($"Incorrect exact triangle cost at {trace.id}/{frame}.");
+                            nativeProbe.SetThresholds(nativeConfig.finestToCoarsestThresholds.Select(value => value * scale).ToArray());
+                            var observed = nativeProbe.ReadLevels(camera);
+                            AppendMeasurement(observed, scale.ToString("R", CultureInfo.InvariantCulture), "NativeLODGroup",
+                                costs.Select((row, part) => row[observed[part]]).Sum());
                         }
-                        else
+                    }
+                    else
+                        foreach (var cap in effectiveCaps)
+                        foreach (var policy in policies)
                         {
-                            var decision = controller.SelectForPose(camera, policy, cap, levels);
-                            if (!decision.Feasible || decision.Spent > cap || levels.Any(level => level < 0))
-                                throw new InvalidOperationException($"Infeasible or out-of-frustum pilot part at {trace.id}/{frame}.");
-                            spent = decision.Spent;
+                            int spent;
+                            if (exact)
+                            {
+                                controller.ScorePose(camera, policy, scoreBuffer, visibility);
+                                if (visibility.Any(visible => !visible) ||
+                                    !ExactCostLod.TrySelect(costs, scoreBuffer, cap, levels))
+                                    throw new InvalidOperationException($"Cannot match exact cost at {trace.id}/{frame}.");
+                                spent = costs.Select((row, part) => row[levels[part]]).Sum();
+                                if (spent != cap)
+                                    throw new InvalidOperationException($"Incorrect exact triangle cost at {trace.id}/{frame}.");
+                            }
+                            else
+                            {
+                                var decision = controller.SelectForPose(camera, policy, cap, levels);
+                                if (!decision.Feasible || decision.Spent > cap || levels.Any(level => level < 0))
+                                    throw new InvalidOperationException($"Infeasible or out-of-frustum pilot part at {trace.id}/{frame}.");
+                                spent = decision.Spent;
+                            }
+                            AppendMeasurement(levels, cap.ToString(CultureInfo.InvariantCulture), policy.ToString(), spent);
                         }
-                        for (var part = 0; part < parts.Count; part++)
-                            meshes[part] = parts[part].MeshAt(levels[part]);
+
+                    void AppendMeasurement(int[] selection, string setting, string policy, int spent)
+                    {
+                        for (var i = 0; i < parts.Count; i++) meshes[i] = parts[i].MeshAt(selection[i]);
                         var actual = capture.Capture(camera, meshes, transforms, ids);
                         var metrics = PartMaskMetrics.Measure(reference, actual, parts.Count);
-                        for (var part = 0; part < parts.Count; part++)
+                        for (var i = 0; i < parts.Count; i++)
                         {
-                            var m = metrics[part];
-                            var angle = parts[part].NearestBakeAngle(position);
+                            var part = parts[i];
+                            var m = metrics[i];
+                            var angle = part.NearestBakeAngle(position);
                             if (m.Reference < config.minimumReferencePixels || angle < .05f)
                                 throw new InvalidOperationException(
-                                    $"Reference part too small or not held out: {trace.id}/{frame}/{parts[part].Id}.");
+                                    $"Reference part too small or not held out: {trace.id}/{frame}/{part.Id}.");
                             observations.Append(FormattableString.Invariant(
-                                $"{trace.id},{frame},{cap},{policy},{spent},{parts[part].Id},{levels[part]},{parts[part].TrianglesAt(levels[part])},{m.Reference},{m.Candidate},{m.Intersection},{m.Union},{angle:F4}\n"));
+                                $"{trace.id},{frame},{setting},{policy},{spent},{part.Id},{selection[i]},{part.TrianglesAt(selection[i])},{m.Reference},{m.Candidate},{m.Intersection},{m.Union},{angle:F4}\n"));
                         }
                     }
                 }
@@ -157,21 +200,22 @@ namespace Workbench
                 UnityEngine.Object.DestroyImmediate(cameraObject);
             }
 
-            var folder = Path.Combine(root, "Results", exact ? "pilot-exact-replay" : "pilot-replay");
+            var folder = Path.Combine(root, "Results", native ? "pilot-native-replay" : exact ? "pilot-exact-replay" : "pilot-replay");
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, "observations.csv"), observations.ToString());
             File.WriteAllText(Path.Combine(folder, "poses.csv"), poses.ToString());
             File.WriteAllText(Path.Combine(folder, "config.json"), configText);
+            if (native) File.WriteAllText(Path.Combine(folder, "native-config.json"), nativeText);
             File.WriteAllText(Path.Combine(folder, "run.json"), JsonUtility.ToJson(new RunInfo
             {
                 unityVersion = Application.unityVersion,
                 graphicsApi = SystemInfo.graphicsDeviceType.ToString(),
                 sceneDependencyHash = AssetDatabase.GetAssetDependencyHash(scene.path).ToString(),
                 screenSizeExponent = controller.ScreenSizeExponent,
-                allocator = exact ? "exact-cost-dp" : "greedy",
-                effectiveCaps = effectiveCaps
+                allocator = native ? "native-lodgroup" : exact ? "exact-cost-dp" : "greedy",
+                effectiveCaps = native ? Array.Empty<int>() : effectiveCaps
             }, true) + "\n");
-            Debug.Log($"Pilot {(exact ? "exact-cost" : "perspective")} replay: " +
+            Debug.Log($"Pilot {(native ? "native LODGroup" : exact ? "exact-cost" : "perspective")} replay: " +
                 $"{config.traces.Length * config.samplesPerTrace} poses → {folder}");
         }
     }
