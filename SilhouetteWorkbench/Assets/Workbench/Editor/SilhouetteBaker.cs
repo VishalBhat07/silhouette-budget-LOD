@@ -17,6 +17,7 @@ namespace Workbench
         const string PartsFolder = "Assets/Workbench/Parts";
         const string MenuPath = "Workbench/Bake Pilot Silhouettes";
         static readonly string[] Parts = { "gear", "washer", "toolbox" };
+        static readonly string[] AdditionalParts = { "hex_nut", "pulley", "slotted_bracket", "handwheel", "embossed_plate" };
 
         [Serializable]
         sealed class ViewSample
@@ -84,11 +85,16 @@ namespace Workbench
         }
 
         [MenuItem(MenuPath)]
-        public static void BakePilot()
+        public static void BakePilot() => Bake(Parts, "pilot-silhouettes");
+
+        [MenuItem("Workbench/Bake Additional Part Silhouettes")]
+        public static void BakeAdditional() => Bake(AdditionalParts, "expanded-silhouettes");
+
+        static void Bake(string[] parts, string reportName)
         {
             var timer = System.Diagnostics.Stopwatch.StartNew();
             var unityRoot = Directory.GetParent(Application.dataPath).FullName;
-            var reportFolder = Path.Combine(unityRoot, "..", "Results", "pilot-silhouettes");
+            var reportFolder = Path.Combine(unityRoot, "..", "Results", reportName);
             var directions = SampleDirections(ViewCount);
             var config = string.Join("|", Resolution, ViewCount, ReferenceLevel, Application.unityVersion,
                 SystemInfo.graphicsDeviceType,
@@ -98,14 +104,14 @@ namespace Workbench
             var settingsHash = Sha256(Encoding.UTF8.GetBytes(config));
             using var renderer = new IsolatedMaskRenderer(Resolution);
             Directory.CreateDirectory(reportFolder);
-            foreach (var partId in Parts)
+            foreach (var partId in parts)
             {
                 var table = BakePart(renderer, unityRoot, partId, directions, settingsHash, reportFolder);
                 var path = Path.Combine(unityRoot, PartsFolder, partId, "silhouettes.json");
                 File.WriteAllText(path, JsonUtility.ToJson(table, true) + "\n");
             }
             AssetDatabase.Refresh();
-            Debug.Log($"Baked {Parts.Length} parts × {ViewCount} views at {Resolution}px in " +
+            Debug.Log($"Baked {parts.Length} parts × {ViewCount} views at {Resolution}px in " +
                 $"{timer.Elapsed.TotalSeconds:F2}s. Diagnostic sheets: {Path.GetFullPath(reportFolder)}");
         }
 

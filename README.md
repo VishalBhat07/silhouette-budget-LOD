@@ -64,6 +64,14 @@ python3 Tools/analyze_native_lod.py --run Experiments/replays/pilot-native-v1 \
   --exact Experiments/replays/pilot-exact-v1
 ```
 
-These are three-part quality pilots; transition popping and performance are not measured here.
+These reports use the original three-part scene. They do not measure transition popping or performance.
+
+### Expanded workbench
+
+The [expanded layout fixture](Experiments/expanded-layouts.json) adds a hex nut, flanged pulley, slotted bracket, handwheel, and embossed plate. The separated and cluttered scenes use exactly the same eight parts. In the cluttered layout the toolbox blocks the camera's view of parts behind it without touching them. The embossed plate is a control: surface relief can change even when its outer silhouette barely moves.
+
+To regenerate the additional OBJ meshes, append `--expanded` to the mesh-generator command above. The five additional parts all use the same simplifier settings; its collapse aggressiveness is 8 rather than the pilot's 7 so the hex nut yields distinct coarse levels. Use the [measured counts](Experiments/expanded-meshes.csv), not their target ratios.
+
+Open `Assets/Workbench/Scenes/InspectionExpanded.unity` for the separated layout or `InspectionClutter.unity` for the occlusion case. Both use the same baked tables and mesh ladders. To rebuild missing scenes, run **Workbench → Bake Additional Part Silhouettes**, then **Workbench → Build Missing Expanded Scenes**. This leaves existing scenes and the original `Inspection.unity` alone. The replay menu items above are still scoped to the original pilot.
 
 See the [implementation and research plan](docs/superpowers/plans/2026-11-22-silhouette-budget-lod.md) for the bake, allocator, and evaluation protocol.
