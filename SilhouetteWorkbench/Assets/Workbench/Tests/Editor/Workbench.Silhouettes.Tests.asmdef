@@ -1,0 +1,6 @@
+{
+  "name": "Workbench.Silhouettes.Tests",
+  "references": ["Workbench.Silhouettes.Editor"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"]
+}

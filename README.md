@@ -14,6 +14,25 @@ The benchmark will replay unseen camera paths and compare silhouette error, LOD 
 
 ## Start here
 
-This repository currently contains the project plan, not a runnable Unity build. Start with the [implementation and research plan](docs/superpowers/plans/2026-11-22-silhouette-budget-lod.md). The first milestone is a three-object pilot with a gear, washer, and toolbox.
+Open `SilhouetteWorkbench/` in Unity Hub with editor version **6000.6.9f1**, then open `Assets/Workbench/Scenes/Inspection.unity`. The scene has an original gear, washer, and toolbox under `Pilot Parts`. Each starts at its full-resolution reference.
 
-**Planned stack:** Unity 6 LTS, URP, C#, Blender, and Python for offline analysis.
+To inspect a different level, expand its OBJ under `Assets/Workbench/Parts/` and assign the mesh sub-asset to the corresponding part's **Mesh Filter**. Level 0 is coarsest and level 3 is finest. All three parts have **240, 480, 960, and 1,920 triangles** per level, as recorded in the [pilot mesh manifest](Experiments/pilot-meshes.csv). The offline silhouette baker is available; the runtime selector and held-out benchmark are not implemented yet.
+
+### Regenerate the meshes
+
+The pilot uses original procedural geometry and the same pinned quadric-error simplifier for every part. Each lower level is generated directly from its reference in the same coordinate frame. This replaces manual Blender decimation for the pilot and makes the inputs reproducible.
+
+```sh
+uv run --no-project --python 3.13 --with numpy==2.2.6 --with fast-simplification==0.1.13 python Tools/generate_pilot_meshes.py
+uv run --no-project --python 3.13 --with numpy==2.2.6 --with fast-simplification==0.1.13 python -m unittest discover -s Tools -p 'test_*.py'
+```
+
+### Bake and inspect silhouettes
+
+Run **Workbench → Bake Pilot Silhouettes** in Unity. The baker renders each part from 32 fixed orthographic directions at 256 × 256 pixels, with each LOD framed by the full-resolution reference bounds. Each part folder gets a `silhouettes.json` containing local directions and `1 − IoU` per level, plus mesh and bake provenance. Zero means identical projected masks, not identical geometry.
+
+Open the generated PNGs under `Results/pilot-silhouettes/`. Each sheet shows **reference**, **coarsest LOD**, and **difference** from left to right, with top and side views. Red pixels are missing from the coarse mesh; cyan pixels are extra. The images are local diagnostics and are not part of the held-out benchmark.
+
+Run the `Workbench.Silhouettes.Tests` assembly in Unity's **EditMode** Test Runner to check the mask metric, view sampling, and a GPU-rendered washer bore.
+
+See the [implementation and research plan](docs/superpowers/plans/2026-11-22-silhouette-budget-lod.md) for the bake, allocator, and evaluation protocol.
