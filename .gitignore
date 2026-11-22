@@ -1,0 +1,23 @@
+.DS_Store
+__pycache__/
+/Results/
+
+# Unity-generated caches, local settings, and builds.
+/SilhouetteWorkbench/[Ll]ibrary/
+/SilhouetteWorkbench/[Tt]emp/
+/SilhouetteWorkbench/[Oo]bj/
+/SilhouetteWorkbench/[Ll]ogs/
+/SilhouetteWorkbench/[Uu]ser[Ss]ettings/
+/SilhouetteWorkbench/[Bb]uild/
+/SilhouetteWorkbench/[Bb]uilds/
+/SilhouetteWorkbench/[Mm]emoryCaptures/
+/SilhouetteWorkbench/[Rr]ecordings/
+
+# Editor-generated IDE files.
+/SilhouetteWorkbench/.vs/
+/SilhouetteWorkbench/.vscode/
+/SilhouetteWorkbench/.idea/
+/SilhouetteWorkbench/*.csproj
+/SilhouetteWorkbench/*.sln
+/SilhouetteWorkbench/*.slnx
+/SilhouetteWorkbench/*.user
