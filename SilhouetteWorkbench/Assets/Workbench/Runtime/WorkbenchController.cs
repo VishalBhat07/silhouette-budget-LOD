@@ -61,6 +61,12 @@ namespace Workbench
         // Scores a camera pose without swapping the rendered meshes.
         public LodSelector.Decision SelectForPose(Camera camera, LodPolicy selected, int cap, int[] selection)
         {
+            ScorePose(camera, selected, losses, active);
+            return LodSelector.Select(costs, losses, active, cap, selection);
+        }
+
+        public void ScorePose(Camera camera, LodPolicy selected, float[][] scores, bool[] visible)
+        {
             GeometryUtility.CalculateFrustumPlanes(camera, frustum);
             var cameraTransform = camera.transform;
             var eye = cameraTransform.position;
@@ -71,15 +77,14 @@ namespace Workbench
                 var part = ordered[i];
                 var center = part.WorldCenter;
                 var radius = part.WorldRadius;
-                active[i] = part.CanRender &&
+                visible[i] = part.CanRender &&
                     GeometryUtility.TestPlanesAABB(frustum, new Bounds(center, Vector3.one * (2 * radius)));
-                if (!active[i]) continue;
+                if (!visible[i]) continue;
                 var objectToCamera = eye - center;
                 var eyeDepth = Mathf.Max(camera.nearClipPlane, Vector3.Dot(-objectToCamera, forward));
                 var height = Mathf.Clamp01(radius * projectionScale / (camera.orthographic ? 1f : eyeDepth));
-                part.FillLoss(losses[i], selected, objectToCamera, height, screenSizeExponent);
+                part.FillLoss(scores[i], selected, objectToCamera, height, screenSizeExponent);
             }
-            return LodSelector.Select(costs, losses, active, cap, selection);
         }
 
         void LateUpdate()

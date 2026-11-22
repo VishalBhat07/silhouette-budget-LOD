@@ -96,7 +96,7 @@ def analyze(rows, min_pixels):
 
 def render_report(summary, config, run, angles):
     lines = [
-        "# Pilot perspective replay",
+        "# Pilot exact-cost control" if run.get("allocator") == "exact-cost-dp" else "# Pilot perspective replay",
         "",
         f"Unity `{run['unityVersion']}` · `{run['graphicsApi']}` · "
         f"{config['width']}×{config['height']} · screen-size exponent {run['screenSizeExponent']}.",
@@ -110,6 +110,13 @@ def render_report(summary, config, run, angles):
         "| Cap | Comparator | Mean spend (comparator / silhouette) | Comparator loss | Silhouette loss | Shared-cap gain | Exact-spend gain | Exact pairs | Different assignments |",
         "|---:|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
+    if run.get("allocator") == "exact-cost-dp":
+        lines[5:5] = [
+            f"Offline dynamic programming forced every policy to spend exactly one of "
+            f"{', '.join(map(str, run['effectiveCaps']))} triangles. It minimizes the policy’s "
+            "predicted loss; actual perspective-mask loss is scored afterward.",
+            "",
+        ]
     pp = lambda n: "—" if n is None else f"{n * 100:+.3f} pp"
     for cap, baselines in summary.items():
         for name, row in baselines.items():
@@ -142,10 +149,13 @@ def main():
     with (args.run / "poses.csv").open(newline="") as stream:
         poses = [(row["trace"], int(row["frame"])) for row in csv.DictReader(stream)]
     expected = {(trace["id"], i) for trace in config["traces"] for i in range(config["samplesPerTrace"])}
+    effective_caps = run.get("effectiveCaps", config["caps"])
     scored = {(row["trace"], int(row["frame"]), int(row["cap"])) for row in rows}
     if set(poses) != expected or len(poses) != len(expected) or scored != {
-            (trace, frame, cap) for trace, frame in expected for cap in config["caps"]}:
+            (trace, frame, cap) for trace, frame in expected for cap in effective_caps}:
         raise ValueError("Incomplete or inconsistent replay traces")
+    if run.get("allocator") == "exact-cost-dp" and any(int(row["spent"]) != int(row["cap"]) for row in rows):
+        raise ValueError("Exact-cost replay is not fully matched")
     if any({row["part_id"] for row in rows if (row["trace"], int(row["frame"]), int(row["cap"])) == pose}
            != {"gear", "washer", "toolbox"} for pose in scored):
         raise ValueError("Expected all three pilot parts at each pose and cap")

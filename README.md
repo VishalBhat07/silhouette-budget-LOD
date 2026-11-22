@@ -51,6 +51,10 @@ With `Inspection.unity` saved and outside Play Mode, run **Workbench → Run Pil
 python3 Tools/analyze_pilot_replay.py
 ```
 
-The [first-run report](Reports/pilot-replay.md) separates same-cap results from pose-paired exact-spend results. To regenerate the report without Unity, run `python3 Tools/analyze_pilot_replay.py --run Experiments/replays/pilot-v1`. This is a three-part quality pilot; native Unity `LODGroup`, transition popping, and performance are not measured here.
+The [greedy replay report](Reports/pilot-replay.md) separates same-cap results from pose-paired exact-spend results.
+
+For a control with no leftover budget, run **Workbench → Run Pilot Exact-Cost Replay** and pass `--run Results/pilot-exact-replay` to the analyzer. This uses offline dynamic programming to find the best assignment according to each policy's own score at exactly the same triangle count. The [exact-cost report](Reports/pilot-exact-cost.md) scores those meshes against the actual perspective masks. The real-time allocator still uses the greedy algorithm.
+
+To regenerate the reports without Unity, use `--run Experiments/replays/pilot-v1` for greedy or `--run Experiments/replays/pilot-exact-v1` for exact cost. These are three-part quality pilots; native Unity `LODGroup`, transition popping, and performance are not measured here.
 
 See the [implementation and research plan](docs/superpowers/plans/2026-11-22-silhouette-budget-lod.md) for the bake, allocator, and evaluation protocol.

@@ -32,12 +32,18 @@ namespace Workbench
         [Serializable]
         sealed class RunInfo
         {
-            public string unityVersion, graphicsApi, sceneDependencyHash;
+            public string unityVersion, graphicsApi, sceneDependencyHash, allocator;
             public int screenSizeExponent;
+            public int[] effectiveCaps;
         }
 
         [MenuItem("Workbench/Run Pilot Perspective Replay")]
-        public static void Run()
+        public static void Run() => Run(false);
+
+        [MenuItem("Workbench/Run Pilot Exact-Cost Replay")]
+        public static void RunExact() => Run(true);
+
+        static void Run(bool exact)
         {
             var scene = SceneManager.GetActiveScene();
             if (Application.isPlaying || scene.path != ScenePath || scene.isDirty)
@@ -51,6 +57,13 @@ namespace Workbench
             if (config.samplesPerTrace < 2 || config.minimumReferencePixels < 1 ||
                 config.traces == null || config.traces.Length == 0 || config.caps == null || config.caps.Length == 0)
                 throw new InvalidOperationException("Invalid replay trace configuration.");
+
+            var costs = parts.Select(part => Enumerable.Range(0, part.FinestLevel + 1)
+                .Select(part.TrianglesAt).ToArray()).ToArray();
+            var effectiveCaps = (exact ? ExactCostLod.MatchTargets(costs, config.caps) : config.caps)
+                .Distinct().ToArray();
+            var scoreBuffer = costs.Select(row => new float[row.Length]).ToArray();
+            var visibility = new bool[parts.Count];
 
             var occluders = new[] { GameObject.Find("Ground"), GameObject.Find("Workbench") }
                 .SelectMany(go => go.GetComponentsInChildren<MeshFilter>())
@@ -101,12 +114,27 @@ namespace Workbench
                     for (var part = 0; part < parts.Count; part++)
                         meshes[part] = parts[part].MeshAt(parts[part].FinestLevel);
                     var reference = capture.Capture(camera, meshes, transforms, ids);
-                    foreach (var cap in config.caps)
+                    foreach (var cap in effectiveCaps)
                     foreach (var policy in policies)
                     {
-                        var decision = controller.SelectForPose(camera, policy, cap, levels);
-                        if (!decision.Feasible || decision.Spent > cap || levels.Any(level => level < 0))
-                            throw new InvalidOperationException($"Infeasible or out-of-frustum pilot part at {trace.id}/{frame}.");
+                        int spent;
+                        if (exact)
+                        {
+                            controller.ScorePose(camera, policy, scoreBuffer, visibility);
+                            if (visibility.Any(visible => !visible) ||
+                                !ExactCostLod.TrySelect(costs, scoreBuffer, cap, levels))
+                                throw new InvalidOperationException($"Cannot match exact cost at {trace.id}/{frame}.");
+                            spent = costs.Select((row, part) => row[levels[part]]).Sum();
+                            if (spent != cap)
+                                throw new InvalidOperationException($"Incorrect exact triangle cost at {trace.id}/{frame}.");
+                        }
+                        else
+                        {
+                            var decision = controller.SelectForPose(camera, policy, cap, levels);
+                            if (!decision.Feasible || decision.Spent > cap || levels.Any(level => level < 0))
+                                throw new InvalidOperationException($"Infeasible or out-of-frustum pilot part at {trace.id}/{frame}.");
+                            spent = decision.Spent;
+                        }
                         for (var part = 0; part < parts.Count; part++)
                             meshes[part] = parts[part].MeshAt(levels[part]);
                         var actual = capture.Capture(camera, meshes, transforms, ids);
@@ -119,7 +147,7 @@ namespace Workbench
                                 throw new InvalidOperationException(
                                     $"Reference part too small or not held out: {trace.id}/{frame}/{parts[part].Id}.");
                             observations.Append(FormattableString.Invariant(
-                                $"{trace.id},{frame},{cap},{policy},{decision.Spent},{parts[part].Id},{levels[part]},{parts[part].TrianglesAt(levels[part])},{m.Reference},{m.Candidate},{m.Intersection},{m.Union},{angle:F4}\n"));
+                                $"{trace.id},{frame},{cap},{policy},{spent},{parts[part].Id},{levels[part]},{parts[part].TrianglesAt(levels[part])},{m.Reference},{m.Candidate},{m.Intersection},{m.Union},{angle:F4}\n"));
                         }
                     }
                 }
@@ -129,7 +157,7 @@ namespace Workbench
                 UnityEngine.Object.DestroyImmediate(cameraObject);
             }
 
-            var folder = Path.Combine(root, "Results", "pilot-replay");
+            var folder = Path.Combine(root, "Results", exact ? "pilot-exact-replay" : "pilot-replay");
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, "observations.csv"), observations.ToString());
             File.WriteAllText(Path.Combine(folder, "poses.csv"), poses.ToString());
@@ -139,9 +167,12 @@ namespace Workbench
                 unityVersion = Application.unityVersion,
                 graphicsApi = SystemInfo.graphicsDeviceType.ToString(),
                 sceneDependencyHash = AssetDatabase.GetAssetDependencyHash(scene.path).ToString(),
-                screenSizeExponent = controller.ScreenSizeExponent
+                screenSizeExponent = controller.ScreenSizeExponent,
+                allocator = exact ? "exact-cost-dp" : "greedy",
+                effectiveCaps = effectiveCaps
             }, true) + "\n");
-            Debug.Log($"Pilot perspective replay: {config.traces.Length * config.samplesPerTrace} poses → {folder}");
+            Debug.Log($"Pilot {(exact ? "exact-cost" : "perspective")} replay: " +
+                $"{config.traces.Length * config.samplesPerTrace} poses → {folder}");
         }
     }
 }
