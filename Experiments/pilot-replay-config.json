@@ -1,0 +1,29 @@
+{
+  "width": 1280,
+  "height": 720,
+  "samplesPerTrace": 12,
+  "minimumReferencePixels": 16,
+  "verticalFieldOfView": 50.0,
+  "targetY": 1.13,
+  "caps": [960, 1440, 2160],
+  "traces": [
+    {
+      "id": "orbit",
+      "firstYaw": -29.0, "lastYaw": 31.0,
+      "firstRadius": 4.25, "lastRadius": 4.25,
+      "firstHeight": 3.05, "lastHeight": 3.05
+    },
+    {
+      "id": "grazing",
+      "firstYaw": -16.0, "lastYaw": 22.0,
+      "firstRadius": 5.1, "lastRadius": 5.1,
+      "firstHeight": 1.55, "lastHeight": 1.9
+    },
+    {
+      "id": "dolly",
+      "firstYaw": 17.0, "lastYaw": 12.0,
+      "firstRadius": 5.8, "lastRadius": 3.25,
+      "firstHeight": 2.75, "lastHeight": 2.75
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
@@ -22,6 +23,7 @@ namespace Workbench
         bool warnedInfeasible;
 
         public LodSelector.Decision CurrentDecision { get; private set; }
+        public int ScreenSizeExponent => screenSizeExponent;
 
         void Awake() => Initialize();
 
@@ -50,13 +52,20 @@ namespace Workbench
             }
         }
 
-        LodSelector.Decision Evaluate(LodPolicy selected)
+        public IReadOnlyList<PartLods> PrepareEvaluation()
         {
-            GeometryUtility.CalculateFrustumPlanes(viewCamera, frustum);
-            var cameraTransform = viewCamera.transform;
+            Initialize();
+            return ordered;
+        }
+
+        // Scores a camera pose without swapping the rendered meshes.
+        public LodSelector.Decision SelectForPose(Camera camera, LodPolicy selected, int cap, int[] selection)
+        {
+            GeometryUtility.CalculateFrustumPlanes(camera, frustum);
+            var cameraTransform = camera.transform;
             var eye = cameraTransform.position;
             var forward = cameraTransform.forward;
-            var projectionScale = Mathf.Abs(viewCamera.projectionMatrix.m11);
+            var projectionScale = Mathf.Abs(camera.projectionMatrix.m11);
             for (var i = 0; i < ordered.Length; i++)
             {
                 var part = ordered[i];
@@ -66,16 +75,16 @@ namespace Workbench
                     GeometryUtility.TestPlanesAABB(frustum, new Bounds(center, Vector3.one * (2 * radius)));
                 if (!active[i]) continue;
                 var objectToCamera = eye - center;
-                var eyeDepth = Mathf.Max(viewCamera.nearClipPlane, Vector3.Dot(-objectToCamera, forward));
-                var height = Mathf.Clamp01(radius * projectionScale / (viewCamera.orthographic ? 1f : eyeDepth));
+                var eyeDepth = Mathf.Max(camera.nearClipPlane, Vector3.Dot(-objectToCamera, forward));
+                var height = Mathf.Clamp01(radius * projectionScale / (camera.orthographic ? 1f : eyeDepth));
                 part.FillLoss(losses[i], selected, objectToCamera, height, screenSizeExponent);
             }
-            return LodSelector.Select(costs, losses, active, triangleBudget, levels);
+            return LodSelector.Select(costs, losses, active, cap, selection);
         }
 
         void LateUpdate()
         {
-            CurrentDecision = Evaluate(policy);
+            CurrentDecision = SelectForPose(viewCamera, policy, triangleBudget, levels);
             for (var i = 0; i < ordered.Length; i++)
                 if (levels[i] >= 0) ordered[i].ApplyLevel(levels[i]);
 
@@ -92,7 +101,7 @@ namespace Workbench
             output.AppendLine($"Shared workbench cap: {triangleBudget} triangles");
             foreach (LodPolicy item in Enum.GetValues(typeof(LodPolicy)))
             {
-                var decision = Evaluate(item);
+                var decision = SelectForPose(viewCamera, item, triangleBudget, levels);
                 output.Append($"{item}: {decision.Spent} triangles");
                 if (!decision.Feasible) output.Append(" (infeasible fallback)");
                 for (var i = 0; i < ordered.Length; i++)

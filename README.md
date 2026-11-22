@@ -24,7 +24,7 @@ Open `Inspection.unity`, select `Pilot Parts`, and use **Compare Policies At Cur
 
 In Play Mode, change **Policy** or **Triangle Budget** in the same Inspector to preview the mesh swaps. The shared allocator considers only enabled parts intersecting the camera frustum. If even the coarsest visible levels exceed the cap, it displays those levels as a fallback and logs a warning rather than claiming a feasible result. The default screen-size exponent is 2 for the pilot; it is not yet tuned on development traces.
 
-This is a decision comparison at one pose, **not** a held-out benchmark result. The native Unity `LODGroup` comparator and replay evaluation are separate milestones.
+This is a decision comparison at one pose. The replay below measures the actual visible masks instead.
 
 ### Regenerate the meshes
 
@@ -42,5 +42,15 @@ Run **Workbench → Bake Pilot Silhouettes** in Unity. The baker renders each pa
 Open the generated PNGs under `Results/pilot-silhouettes/`. Each sheet shows **reference**, **coarsest LOD**, and **difference** from left to right, with top and side views. Red pixels are missing from the coarse mesh; cyan pixels are extra. The images are local diagnostics and are not part of the held-out benchmark.
 
 Run the `Workbench.Silhouettes.Tests` assembly in Unity's **EditMode** Test Runner to check the allocator, mask metric, view sampling, and a GPU-rendered washer bore.
+
+### Run the perspective replay
+
+With `Inspection.unity` saved and outside Play Mode, run **Workbench → Run Pilot Perspective Replay**. It renders the three policies and a full-detail reference from the 36 poses in the [pilot protocol](Experiments/pilot-replay-config.json). Objects use depth-tested IDs, so holes and occlusion count in the visible masks. The bake tables drive selection; they are not used to score the images.
+
+```sh
+python3 Tools/analyze_pilot_replay.py
+```
+
+The [first-run report](Reports/pilot-replay.md) separates same-cap results from pose-paired exact-spend results. To regenerate the report without Unity, run `python3 Tools/analyze_pilot_replay.py --run Experiments/replays/pilot-v1`. This is a three-part quality pilot; native Unity `LODGroup`, transition popping, and performance are not measured here.
 
 See the [implementation and research plan](docs/superpowers/plans/2026-11-22-silhouette-budget-lod.md) for the bake, allocator, and evaluation protocol.

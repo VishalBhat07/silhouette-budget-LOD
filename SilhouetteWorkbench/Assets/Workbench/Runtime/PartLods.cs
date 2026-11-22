@@ -36,6 +36,9 @@ namespace Workbench
         float[] meanErrors;
 
         public string Id => table.partId;
+        public int FinestLevel => table.referenceLevel;
+        public Mesh MeshAt(int level) => meshes[level];
+        public int TrianglesAt(int level) => Costs[level];
         internal int[] Costs => table.triangles;
         internal Vector3 WorldCenter => transform.TransformPoint(table.referenceCenter);
         internal float WorldRadius => table.referenceRadius * Mathf.Abs(transform.lossyScale.x);
@@ -110,21 +113,33 @@ namespace Workbench
                     Array.Copy(meanErrors, destination, destination.Length);
                     break;
                 case LodPolicy.Silhouette:
-                    var local = Quaternion.Inverse(transform.rotation) * objectToCamera;
-                    var bestDot = float.NegativeInfinity;
-                    var best = 0;
-                    for (var i = 0; i < table.views.Length; i++)
-                    {
-                        var dot = Vector3.Dot(local, table.views[i].direction);
-                        if (dot <= bestDot) continue;
-                        bestDot = dot;
-                        best = i;
-                    }
+                    var best = NearestView(objectToCamera);
                     Array.Copy(table.views[best].errorByLevel, destination, destination.Length);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(policy));
             }
+        }
+
+        int NearestView(Vector3 objectToCamera)
+        {
+            var local = Quaternion.Inverse(transform.rotation) * objectToCamera;
+            var bestDot = float.NegativeInfinity;
+            var best = 0;
+            for (var i = 0; i < table.views.Length; i++)
+            {
+                var dot = Vector3.Dot(local, table.views[i].direction);
+                if (dot <= bestDot) continue;
+                bestDot = dot;
+                best = i;
+            }
+            return best;
+        }
+
+        public float NearestBakeAngle(Vector3 cameraPosition)
+        {
+            var direction = cameraPosition - WorldCenter;
+            return Vector3.Angle(direction, transform.rotation * table.views[NearestView(direction)].direction);
         }
 
         internal void ApplyLevel(int level)
