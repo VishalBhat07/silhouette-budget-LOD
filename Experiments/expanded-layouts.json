@@ -1,0 +1,43 @@
+{
+  "previewBudget": 4500,
+  "parts": [
+    {"id": "gear", "name": "Gear", "rgb": "#C55B2C"},
+    {"id": "washer", "name": "Washer", "rgb": "#819EB2"},
+    {"id": "toolbox", "name": "Toolbox", "rgb": "#268079"},
+    {"id": "hex_nut", "name": "Hex Nut", "rgb": "#86684A"},
+    {"id": "pulley", "name": "Flanged Pulley", "rgb": "#46657E"},
+    {"id": "slotted_bracket", "name": "Slotted Bracket", "rgb": "#7B5747"},
+    {"id": "handwheel", "name": "Handwheel", "rgb": "#B98442"},
+    {"id": "embossed_plate", "name": "Embossed Plate", "rgb": "#766487"}
+  ],
+  "layouts": [
+    {
+      "id": "separated", "scene": "InspectionExpanded",
+      "cameraPosition": [2.1, 4.0, -4.5], "cameraTarget": [0, 1.00, 0],
+      "placements": [
+        {"id": "gear", "x": -1.45, "z": -0.49, "yaw": 0},
+        {"id": "hex_nut", "x": -0.55, "z": -0.49, "yaw": 15},
+        {"id": "washer", "x": 0.33, "z": -0.49, "yaw": 0},
+        {"id": "pulley", "x": 1.25, "z": -0.49, "yaw": 0},
+        {"id": "handwheel", "x": -1.45, "z": 0.40, "yaw": 0},
+        {"id": "slotted_bracket", "x": -0.63, "z": 0.40, "yaw": 8},
+        {"id": "embossed_plate", "x": 0.05, "z": 0.40, "yaw": 0},
+        {"id": "toolbox", "x": 1.20, "z": 0.40, "yaw": -8}
+      ]
+    },
+    {
+      "id": "clutter", "scene": "InspectionClutter",
+      "cameraPosition": [0.65, 2.15, -4.1], "cameraTarget": [0, 1.14, 0],
+      "placements": [
+        {"id": "toolbox", "x": -0.12, "z": -0.13, "yaw": 0},
+        {"id": "gear", "x": -0.31, "z": 0.51, "yaw": 0},
+        {"id": "washer", "x": 0.23, "z": 0.45, "yaw": 0},
+        {"id": "hex_nut", "x": -0.99, "z": 0.18, "yaw": 15},
+        {"id": "pulley", "x": 1.12, "z": -0.33, "yaw": 0},
+        {"id": "handwheel", "x": 1.09, "z": 0.33, "yaw": 12},
+        {"id": "embossed_plate", "x": -1.49, "z": -0.38, "yaw": -10},
+        {"id": "slotted_bracket", "x": -1.55, "z": 0.40, "yaw": 18}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+part_id,level,target_ratio,triangles,asset_path,source
+hex_nut,0,0.125,278,Assets/Workbench/Parts/hex_nut/hex_nut_level0.obj,original procedural
+hex_nut,1,0.25,384,Assets/Workbench/Parts/hex_nut/hex_nut_level1.obj,original procedural
+hex_nut,2,0.5,768,Assets/Workbench/Parts/hex_nut/hex_nut_level2.obj,original procedural
+hex_nut,3,1.0,1536,Assets/Workbench/Parts/hex_nut/hex_nut_level3.obj,original procedural
+pulley,0,0.125,460,Assets/Workbench/Parts/pulley/pulley_level0.obj,original procedural
+pulley,1,0.25,600,Assets/Workbench/Parts/pulley/pulley_level1.obj,original procedural
+pulley,2,0.5,1200,Assets/Workbench/Parts/pulley/pulley_level2.obj,original procedural
+pulley,3,1.0,2400,Assets/Workbench/Parts/pulley/pulley_level3.obj,original procedural
+slotted_bracket,0,0.125,216,Assets/Workbench/Parts/slotted_bracket/slotted_bracket_level0.obj,original procedural
+slotted_bracket,1,0.25,432,Assets/Workbench/Parts/slotted_bracket/slotted_bracket_level1.obj,original procedural
+slotted_bracket,2,0.5,864,Assets/Workbench/Parts/slotted_bracket/slotted_bracket_level2.obj,original procedural
+slotted_bracket,3,1.0,1728,Assets/Workbench/Parts/slotted_bracket/slotted_bracket_level3.obj,original procedural
+handwheel,0,0.125,544,Assets/Workbench/Parts/handwheel/handwheel_level0.obj,original procedural
+handwheel,1,0.25,1088,Assets/Workbench/Parts/handwheel/handwheel_level1.obj,original procedural
+handwheel,2,0.5,2176,Assets/Workbench/Parts/handwheel/handwheel_level2.obj,original procedural
+handwheel,3,1.0,4352,Assets/Workbench/Parts/handwheel/handwheel_level3.obj,original procedural
+embossed_plate,0,0.125,288,Assets/Workbench/Parts/embossed_plate/embossed_plate_level0.obj,original procedural
+embossed_plate,1,0.25,576,Assets/Workbench/Parts/embossed_plate/embossed_plate_level1.obj,original procedural
+embossed_plate,2,0.5,1152,Assets/Workbench/Parts/embossed_plate/embossed_plate_level2.obj,original procedural
+embossed_plate,3,1.0,2304,Assets/Workbench/Parts/embossed_plate/embossed_plate_level3.obj,original procedural

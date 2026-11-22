@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Generate the original three-part pilot and its measured OBJ triangle counts."""
+"""Generate the original pilot or expanded parts and their OBJ triangle counts."""
 
 import argparse
 import csv
 from dataclasses import dataclass
-from math import cos, pi, sin, tau
+from math import cos, pi, sin, sqrt, tau
 from pathlib import Path
 
 import fast_simplification
@@ -12,6 +12,7 @@ import numpy as np
 
 
 RATIOS = (0.125, 0.25, 0.5, 1.0)
+EXPANDED_AGGRESSIVENESS = 8
 PARTS = Path("Assets/Workbench/Parts")
 
 
@@ -41,14 +42,14 @@ def join_loops(loops, *, tube=False):
     return Mesh(np.array(points, dtype=np.float64), np.array(faces, dtype=np.int32))
 
 
-def ring_mesh(outline, bore, thickness, bevel):
+def ring_mesh(outline, bore, thickness, bevel, inner_radii=None):
     """Bored plate with chamfered outer and inner rims and a floor-level pivot."""
     n = len(outline)
 
     def ring(y, radii):
         return [(r * cos(a), y, r * sin(a)) for a, r in radii]
 
-    inner = [(tau * i / n, bore) for i in range(n)]
+    inner = [(tau * i / n, bore if inner_radii is None else inner_radii[i]) for i in range(n)]
     inset = [(angle, radius - bevel) for angle, radius in outline]
     opened = [(angle, radius + bevel) for angle, radius in inner]
     return join_loops([
@@ -100,12 +101,56 @@ def references():
     return {"gear": gear, "washer": washer, "toolbox": toolbox}
 
 
-def ladder(reference):
+def expanded_references():
+    def angles(n):
+        return [tau * i / n for i in range(n)]
+
+    hex_angles = angles(96)
+    nut = ring_mesh([(a, .158 / cos((a + pi / 6) % (pi / 3) - pi / 6)) for a in hex_angles],
+                    bore=.073, thickness=.136, bevel=.008)
+
+    pulley_angles = angles(100)
+    profile = ((0, .077), (0, .232), (.012, .244), (.055, .244), (.070, .178),
+               (.137, .178), (.155, .244), (.195, .244), (.208, .232),
+               (.208, .077), (.200, .070), (.009, .070))
+    pulley = join_loops([[(r * cos(a), y, r * sin(a)) for a in pulley_angles] for y, r in profile], tube=True)
+
+    def capsule_radius(angle, center=.132, radius=.041):
+        x, z = abs(cos(angle)), abs(sin(angle))
+        if z * center >= radius * x:
+            return radius / z
+        return center * x + sqrt(max(0, radius * radius - (center * z) ** 2))
+
+    slot_angles = angles(108)
+    slot_outline = [(a, min(.265 / max(abs(cos(a)), 1e-9), .133 / max(abs(sin(a)), 1e-9)))
+                    for a in slot_angles]
+    bracket = ring_mesh(slot_outline, 0, .073, .005, [capsule_radius(a) for a in slot_angles])
+
+    wheel = ring_mesh([(a, .255) for a in angles(88)], bore=.217, thickness=.076, bevel=.008)
+    hub = ring_mesh([(a, .087) for a in angles(64)], bore=.032, thickness=.088, bevel=.007)
+    spoke = rounded_box(.195, .054, .011, .065, .016, .006, x=.144)
+    spokes = []
+    for angle in angles(5):
+        x, y, z = spoke.points.T
+        points = np.column_stack((x * cos(angle) - z * sin(angle), y, x * sin(angle) + z * cos(angle)))
+        spokes.append(Mesh(points, spoke.faces))
+    handwheel = combine([wheel, hub, *spokes])
+
+    plate = combine([
+        rounded_box(.558, .404, 0, .049, .037, .008),
+        *(rounded_box(.030, depth, .047, .068, .008, .005, x=x)
+          for x, depth in zip((-.148, -.074, 0, .074, .148), (.10, .18, .252, .18, .10))),
+    ])
+    return {"hex_nut": nut, "pulley": pulley, "slotted_bracket": bracket,
+            "handwheel": handwheel, "embossed_plate": plate}
+
+
+def ladder(reference, *, aggressiveness=7):
     meshes = []
     for ratio in RATIOS[:-1]:
         points, faces = fast_simplification.simplify(
             reference.points.copy(), reference.faces.copy(),
-            target_count=round(ratio * len(reference.faces)), agg=7,
+            target_count=round(ratio * len(reference.faces)), agg=aggressiveness,
         )
         meshes.append(Mesh(points, faces))
     return [*meshes, reference]
@@ -122,14 +167,15 @@ def save_obj(path, mesh):
             stream.write(f"f {a + 1} {b + 1} {c + 1}\n")
 
 
-def generate(root):
-    manifest = root / "Experiments/pilot-meshes.csv"
+def generate(root, *, expanded=False):
+    manifest = root / "Experiments" / ("expanded-meshes.csv" if expanded else "pilot-meshes.csv")
     manifest.parent.mkdir(parents=True, exist_ok=True)
     with manifest.open("w", newline="", encoding="ascii") as stream:
         writer = csv.writer(stream, lineterminator="\n")
         writer.writerow(("part_id", "level", "target_ratio", "triangles", "asset_path", "source"))
-        for name, ref in references().items():
-            for level, (ratio, mesh) in enumerate(zip(RATIOS, ladder(ref))):
+        for name, ref in (expanded_references() if expanded else references()).items():
+            chain = ladder(ref, aggressiveness=EXPANDED_AGGRESSIVENESS if expanded else 7)
+            for level, (ratio, mesh) in enumerate(zip(RATIOS, chain)):
                 path = PARTS / name / f"{name}_level{level}.obj"
                 save_obj(root / "SilhouetteWorkbench" / path, mesh)
                 writer.writerow((name, level, ratio, len(mesh.faces), path.as_posix(), "original procedural"))
@@ -138,4 +184,6 @@ def generate(root):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
-    generate(parser.parse_args().root)
+    parser.add_argument("--expanded", action="store_true", help="Generate only the five additional parts.")
+    args = parser.parse_args()
+    generate(args.root, expanded=args.expanded)
