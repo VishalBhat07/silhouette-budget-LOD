@@ -1,0 +1,13 @@
+part_id,level,target_ratio,triangles,asset_path,source
+gear,0,0.125,240,Assets/Workbench/Parts/gear/gear_level0.obj,original procedural
+gear,1,0.25,480,Assets/Workbench/Parts/gear/gear_level1.obj,original procedural
+gear,2,0.5,960,Assets/Workbench/Parts/gear/gear_level2.obj,original procedural
+gear,3,1.0,1920,Assets/Workbench/Parts/gear/gear_level3.obj,original procedural
+washer,0,0.125,240,Assets/Workbench/Parts/washer/washer_level0.obj,original procedural
+washer,1,0.25,480,Assets/Workbench/Parts/washer/washer_level1.obj,original procedural
+washer,2,0.5,960,Assets/Workbench/Parts/washer/washer_level2.obj,original procedural
+washer,3,1.0,1920,Assets/Workbench/Parts/washer/washer_level3.obj,original procedural
+toolbox,0,0.125,240,Assets/Workbench/Parts/toolbox/toolbox_level0.obj,original procedural
+toolbox,1,0.25,480,Assets/Workbench/Parts/toolbox/toolbox_level1.obj,original procedural
+toolbox,2,0.5,960,Assets/Workbench/Parts/toolbox/toolbox_level2.obj,original procedural
+toolbox,3,1.0,1920,Assets/Workbench/Parts/toolbox/toolbox_level3.obj,original procedural
