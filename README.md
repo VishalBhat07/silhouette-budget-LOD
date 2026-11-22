@@ -16,7 +16,15 @@ The benchmark will replay unseen camera paths and compare silhouette error, LOD 
 
 Open `SilhouetteWorkbench/` in Unity Hub with editor version **6000.6.9f1**, then open `Assets/Workbench/Scenes/Inspection.unity`. The scene has an original gear, washer, and toolbox under `Pilot Parts`. Each starts at its full-resolution reference.
 
-To inspect a different level, expand its OBJ under `Assets/Workbench/Parts/` and assign the mesh sub-asset to the corresponding part's **Mesh Filter**. Level 0 is coarsest and level 3 is finest. All three parts have **240, 480, 960, and 1,920 triangles** per level, as recorded in the [pilot mesh manifest](Experiments/pilot-meshes.csv). The offline silhouette baker is available; the runtime selector and held-out benchmark are not implemented yet.
+Level 0 is coarsest and level 3 is finest. All three parts have **240, 480, 960, and 1,920 triangles** per level, as recorded in the [pilot mesh manifest](Experiments/pilot-meshes.csv).
+
+### Compare the runtime policies
+
+Open `Inspection.unity`, select `Pilot Parts`, and use **Compare Policies At Current Pose** from the **Workbench Controller** component menu. The Console prints the selected level per part and actual spend for all three policies, without changing the scene. At the saved camera pose and a cap of **960 triangles**, screen size upgrades the toolbox to L1; the silhouette and view-averaged policies upgrade the gear to L1 instead. All three spend exactly 960 triangles.
+
+In Play Mode, change **Policy** or **Triangle Budget** in the same Inspector to preview the mesh swaps. The shared allocator considers only enabled parts intersecting the camera frustum. If even the coarsest visible levels exceed the cap, it displays those levels as a fallback and logs a warning rather than claiming a feasible result. The default screen-size exponent is 2 for the pilot; it is not yet tuned on development traces.
+
+This is a decision comparison at one pose, **not** a held-out benchmark result. The native Unity `LODGroup` comparator and replay evaluation are separate milestones.
 
 ### Regenerate the meshes
 
@@ -33,6 +41,6 @@ Run **Workbench → Bake Pilot Silhouettes** in Unity. The baker renders each pa
 
 Open the generated PNGs under `Results/pilot-silhouettes/`. Each sheet shows **reference**, **coarsest LOD**, and **difference** from left to right, with top and side views. Red pixels are missing from the coarse mesh; cyan pixels are extra. The images are local diagnostics and are not part of the held-out benchmark.
 
-Run the `Workbench.Silhouettes.Tests` assembly in Unity's **EditMode** Test Runner to check the mask metric, view sampling, and a GPU-rendered washer bore.
+Run the `Workbench.Silhouettes.Tests` assembly in Unity's **EditMode** Test Runner to check the allocator, mask metric, view sampling, and a GPU-rendered washer bore.
 
 See the [implementation and research plan](docs/superpowers/plans/2026-11-22-silhouette-budget-lod.md) for the bake, allocator, and evaluation protocol.

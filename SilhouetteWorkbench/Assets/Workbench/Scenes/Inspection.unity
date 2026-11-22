@@ -243,6 +243,7 @@ GameObject:
   - component: {fileID: 45844972}
   - component: {fileID: 45844974}
   - component: {fileID: 45844973}
+  - component: {fileID: 45844975}
   m_Layer: 0
   m_Name: Gear
   m_TagString: Untagged
@@ -322,6 +323,24 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 45844971}
   m_Mesh: {fileID: -2432090755550338912, guid: 0b556f18c1587488cab9ec3c8b38a4f4, type: 3}
+--- !u!114 &45844975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 45844971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa16d63ecb1d74a0181df18f88e350b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Workbench.Lod::Workbench.PartLods
+  meshes:
+  - {fileID: -2432090755550338912, guid: e5082100d7d2741e190d4ed225a4761a, type: 3}
+  - {fileID: -2432090755550338912, guid: 294bfc807d9ac4d7eb24ec39081c9e43, type: 3}
+  - {fileID: -2432090755550338912, guid: c755aebfa2b6f4388ba9bc45a43033f9, type: 3}
+  - {fileID: -2432090755550338912, guid: 0b556f18c1587488cab9ec3c8b38a4f4, type: 3}
+  silhouetteTable: {fileID: 4900000, guid: de5c76b3b9f384de08608bf8a86d38eb, type: 3}
 --- !u!1 &138572706
 GameObject:
   m_ObjectHideFlags: 0
@@ -331,6 +350,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 138572707}
+  - component: {fileID: 138572708}
   m_Layer: 0
   m_Name: Pilot Parts
   m_TagString: Untagged
@@ -356,6 +376,26 @@ Transform:
   - {fileID: 1014863990}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &138572708
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 138572706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83f9607dc02e44be4a587d246ad2851f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Workbench.Lod::Workbench.WorkbenchController
+  viewCamera: {fileID: 1764508045}
+  parts:
+  - {fileID: 45844975}
+  - {fileID: 1471266204}
+  - {fileID: 1014863993}
+  triangleBudget: 960
+  policy: 1
+  screenSizeExponent: 2
 --- !u!1 &359755011
 GameObject:
   m_ObjectHideFlags: 0
@@ -830,6 +870,7 @@ GameObject:
   - component: {fileID: 1014863990}
   - component: {fileID: 1014863992}
   - component: {fileID: 1014863991}
+  - component: {fileID: 1014863993}
   m_Layer: 0
   m_Name: Toolbox
   m_TagString: Untagged
@@ -909,6 +950,24 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1014863989}
   m_Mesh: {fileID: -2432090755550338912, guid: bf910f88662794f5ca6091484bf760af, type: 3}
+--- !u!114 &1014863993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1014863989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa16d63ecb1d74a0181df18f88e350b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Workbench.Lod::Workbench.PartLods
+  meshes:
+  - {fileID: -2432090755550338912, guid: c0e0e6b355a3e4750be7fa15e77f11fe, type: 3}
+  - {fileID: -2432090755550338912, guid: 44f22aaa03922481faafe1114ec11702, type: 3}
+  - {fileID: -2432090755550338912, guid: 13beed981267d408d85f381abbcda9c6, type: 3}
+  - {fileID: -2432090755550338912, guid: bf910f88662794f5ca6091484bf760af, type: 3}
+  silhouetteTable: {fileID: 4900000, guid: 89135891ed3184bc9ade0bae8a8d504d, type: 3}
 --- !u!1 &1047808723
 GameObject:
   m_ObjectHideFlags: 0
@@ -1032,6 +1091,7 @@ GameObject:
   - component: {fileID: 1471266201}
   - component: {fileID: 1471266203}
   - component: {fileID: 1471266202}
+  - component: {fileID: 1471266204}
   m_Layer: 0
   m_Name: Washer
   m_TagString: Untagged
@@ -1111,6 +1171,24 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1471266200}
   m_Mesh: {fileID: -2432090755550338912, guid: 31bb5dc55d9894a14a2ff88e0b2c309d, type: 3}
+--- !u!114 &1471266204
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471266200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa16d63ecb1d74a0181df18f88e350b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Workbench.Lod::Workbench.PartLods
+  meshes:
+  - {fileID: -2432090755550338912, guid: a40b53a117a7b4571b2b6b9e1ba628a4, type: 3}
+  - {fileID: -2432090755550338912, guid: c057126617f134136be9fc6f7e225c98, type: 3}
+  - {fileID: -2432090755550338912, guid: c2f34ba6d4af648ceb9d1929f9fa514a, type: 3}
+  - {fileID: -2432090755550338912, guid: 31bb5dc55d9894a14a2ff88e0b2c309d, type: 3}
+  silhouetteTable: {fileID: 4900000, guid: e25ad9932a9dc4a089c17378fa79680f, type: 3}
 --- !u!1 &1764508043
 GameObject:
   m_ObjectHideFlags: 0
