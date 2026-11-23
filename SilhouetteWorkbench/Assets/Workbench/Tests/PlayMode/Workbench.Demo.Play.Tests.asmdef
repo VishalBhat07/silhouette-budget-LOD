@@ -1,0 +1,5 @@
+{
+  "name": "Workbench.Demo.Play.Tests",
+  "references": ["Workbench.Demo"],
+  "optionalUnityReferences": ["TestAssemblies"]
+}

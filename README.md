@@ -18,6 +18,17 @@ Open `SilhouetteWorkbench/` in Unity Hub with editor version **6000.6.9f1**, the
 
 Level 0 is coarsest and level 3 is finest. All three parts have **240, 480, 960, and 1,920 triangles** per level, as recorded in the [pilot mesh manifest](Experiments/pilot-meshes.csv).
 
+### Interactive desktop demo
+
+Open either expanded scene and press **Play**, or choose **Workbench → Build macOS Interactive Demo** to create `Results/demo/SilhouetteWorkbench.app`. The demo starts paused so you can inspect a single pose before playing.
+
+- Switch between **Separated** and **Cluttered**; the replay pose and budget stay fixed.
+- Play a path or scrub the timeline. Select a policy or move the triangle budget slider to pause on the current pose for comparison.
+- Read **selected triangles / cap**, unused budget, and individual part LODs. The actual spend can differ between policies at the same cap.
+- Keyboard: **P** plays or pauses, **1–3** selects a policy, and **L** switches layouts. The controls are also reachable with Tab.
+
+The interactive HUD is bypassed by the standalone timing flag. The Unity Play Mode smoke test is in `Workbench.Demo.Play.Tests`.
+
 ### Compare the runtime policies
 
 Open `Inspection.unity`, select `Pilot Parts`, and use **Compare Policies At Current Pose** from the **Workbench Controller** component menu. The Console prints the selected level per part and actual spend for all three policies, without changing the scene. At the saved camera pose and a cap of **960 triangles**, screen size upgrades the toolbox to L1; the silhouette and view-averaged policies upgrade the gear to L1 instead. All three spend exactly 960 triangles.

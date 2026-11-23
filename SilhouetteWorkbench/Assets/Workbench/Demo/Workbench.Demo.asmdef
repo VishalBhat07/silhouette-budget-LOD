@@ -1,0 +1,4 @@
+{
+  "name": "Workbench.Demo",
+  "references": ["Workbench.Lod", "Unity.InputSystem"]
+}
