@@ -88,4 +88,17 @@ In a saved expanded scene, run **Workbench → Measure LOD Popping in Active Lay
 
 The [transition report](Reports/temporal-replay.md) can also be regenerated from the archive with `python3 Tools/analyze_temporal_replay.py --run Experiments/replays/temporal-v1`.
 
+### Time the standalone player
+
+Run **Workbench → Build macOS Timing Player** to generate the non-development app. From the repo root, run the real windowed player (do not pass `-batchmode` or `-nographics`):
+
+```sh
+Results/standalone/SilhouetteTiming.app/Contents/MacOS/SilhouetteWorkbench \
+  --workbench-timing "$PWD/Results/standalone/timing" \
+  -screen-fullscreen 0 -screen-width 1280 -screen-height 720
+python3 Tools/analyze_standalone_timing.py
+```
+
+The player warms up every policy, runs five interleaved repeats per policy and layout, writes the buffered measurements, and exits. It does not render mask captures or draw a benchmark HUD. GPU timing can be unavailable even when the player renders normally. Regenerate the [first standalone timing report](Reports/standalone-timing.md) with `python3 Tools/analyze_standalone_timing.py --run Experiments/replays/timing-v1`.
+
 See the [implementation and research plan](docs/superpowers/plans/2026-11-22-silhouette-budget-lod.md) for the bake, allocator, and evaluation protocol.

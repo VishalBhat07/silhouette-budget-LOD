@@ -90,13 +90,18 @@ namespace Workbench
         void LateUpdate()
         {
             CurrentDecision = SelectForPose(viewCamera, policy, triangleBudget, levels);
-            for (var i = 0; i < ordered.Length; i++)
-                if (levels[i] >= 0) ordered[i].ApplyLevel(levels[i]);
+            ApplySelection(levels);
 
             if (!CurrentDecision.Feasible && !warnedInfeasible)
                 Debug.LogWarning($"Triangle cap {triangleBudget} is infeasible; coarsest visible levels cost " +
                     $"{CurrentDecision.Spent}. This frame is not budget-compliant.", this);
             warnedInfeasible = !CurrentDecision.Feasible;
+        }
+
+        public void ApplySelection(int[] selection)
+        {
+            for (var i = 0; i < ordered.Length; i++)
+                if (selection[i] >= 0) ordered[i].ApplyLevel(selection[i]);
         }
 
         public string CompareAtCurrentPose()
