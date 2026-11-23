@@ -82,4 +82,10 @@ The [eight-part report](Reports/expanded-replay.md) separates visible silhouette
 python3 Tools/analyze_expanded_replay.py --run Experiments/replays/expanded-v1
 ```
 
+### Measure LOD popping
+
+In a saved expanded scene, run **Workbench → Measure LOD Popping in Active Layout**. The runner compares the previous and current assignments at the same new camera pose, so camera motion does not count as popping. Run both layouts, then use `python3 Tools/analyze_temporal_replay.py` to summarize the switches.
+
+The [transition report](Reports/temporal-replay.md) can also be regenerated from the archive with `python3 Tools/analyze_temporal_replay.py --run Experiments/replays/temporal-v1`.
+
 See the [implementation and research plan](docs/superpowers/plans/2026-11-22-silhouette-budget-lod.md) for the bake, allocator, and evaluation protocol.
