@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,6 +13,8 @@ namespace Workbench
     public static class PilotReplay
     {
         const string ScenePath = "Assets/Workbench/Scenes/Inspection.unity";
+        const string ExpandedScene = "Assets/Workbench/Scenes/InspectionExpanded.unity";
+        const string ClutterScene = "Assets/Workbench/Scenes/InspectionClutter.unity";
         enum ReplayKind { Greedy, Exact, Native }
 
         [Serializable]
@@ -27,6 +30,7 @@ namespace Workbench
             public int width, height, samplesPerTrace, minimumReferencePixels;
             public float verticalFieldOfView, targetY;
             public int[] caps;
+            public string[] partIds;
             public Trace[] traces;
         }
 
@@ -40,7 +44,7 @@ namespace Workbench
         [Serializable]
         sealed class RunInfo
         {
-            public string unityVersion, graphicsApi, sceneDependencyHash, allocator;
+            public string unityVersion, graphicsApi, sceneDependencyHash, allocator, layout;
             public int screenSizeExponent;
             public int[] effectiveCaps;
         }
@@ -54,22 +58,47 @@ namespace Workbench
         [MenuItem("Workbench/Run Pilot Native LODGroup Replay")]
         public static void RunNative() => Run(ReplayKind.Native);
 
-        static void Run(ReplayKind kind)
+        [MenuItem("Workbench/Run Expanded Layout Replay")]
+        public static void RunExpanded()
+        {
+            Run(ReplayKind.Greedy, expanded: true);
+            Run(ReplayKind.Exact, expanded: true);
+        }
+
+        public static void RunAllExpandedBatch()
+        {
+            if (!Application.isBatchMode)
+                throw new InvalidOperationException("Use the Workbench menu for the active scene.");
+            foreach (var path in new[] { ExpandedScene, ClutterScene })
+            {
+                EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+                RunExpanded();
+            }
+        }
+
+        static void Run(ReplayKind kind, bool expanded = false)
         {
             var exact = kind == ReplayKind.Exact;
             var native = kind == ReplayKind.Native;
             var scene = SceneManager.GetActiveScene();
-            if (Application.isPlaying || scene.path != ScenePath || scene.isDirty)
-                throw new InvalidOperationException("Open and save Inspection in Edit Mode before running the replay.");
+            var layout = scene.path == ExpandedScene ? "separated" : scene.path == ClutterScene ? "clutter" : "";
+            if (Application.isPlaying || scene.isDirty ||
+                (expanded ? layout.Length == 0 || native : scene.path != ScenePath))
+                throw new InvalidOperationException(expanded
+                    ? "Open and save InspectionExpanded or InspectionClutter in Edit Mode before running."
+                    : "Open and save Inspection in Edit Mode before running the pilot replay.");
 
-            var controller = GameObject.Find("Pilot Parts").GetComponent<WorkbenchController>();
+            var controller = GameObject.Find(expanded ? "Inspection Parts" : "Pilot Parts").GetComponent<WorkbenchController>();
             var parts = controller.PrepareEvaluation();
             var root = Directory.GetParent(Application.dataPath).Parent.FullName;
-            var configText = File.ReadAllText(Path.Combine(root, "Experiments/pilot-replay-config.json"));
+            var configText = File.ReadAllText(Path.Combine(root, "Experiments",
+                expanded ? "expanded-replay-config.json" : "pilot-replay-config.json"));
             var config = JsonUtility.FromJson<Config>(configText);
             if (config.samplesPerTrace < 2 || config.minimumReferencePixels < 1 ||
                 config.traces == null || config.traces.Length == 0 || config.caps == null || config.caps.Length == 0)
                 throw new InvalidOperationException("Invalid replay trace configuration.");
+            if (expanded && (config.partIds == null || !parts.Select(part => part.Id).SequenceEqual(config.partIds)))
+                throw new InvalidOperationException("The expanded scene does not match the protocol's eight parts.");
 
             var costs = parts.Select(part => Enumerable.Range(0, part.FinestLevel + 1)
                 .Select(part.TrianglesAt).ToArray()).ToArray();
@@ -186,7 +215,8 @@ namespace Workbench
                             var part = parts[i];
                             var m = metrics[i];
                             var angle = part.NearestBakeAngle(position);
-                            if (m.Reference < config.minimumReferencePixels || angle < .05f)
+                            // In the occlusion study, retain hidden reference parts in the raw measurements.
+                            if ((!expanded && m.Reference < config.minimumReferencePixels) || angle < .05f)
                                 throw new InvalidOperationException(
                                     $"Reference part too small or not held out: {trace.id}/{frame}/{part.Id}.");
                             observations.Append(FormattableString.Invariant(
@@ -200,7 +230,9 @@ namespace Workbench
                 UnityEngine.Object.DestroyImmediate(cameraObject);
             }
 
-            var folder = Path.Combine(root, "Results", native ? "pilot-native-replay" : exact ? "pilot-exact-replay" : "pilot-replay");
+            var folder = expanded
+                ? Path.Combine(root, "Results", "expanded-replay", layout, exact ? "exact" : "greedy")
+                : Path.Combine(root, "Results", native ? "pilot-native-replay" : exact ? "pilot-exact-replay" : "pilot-replay");
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, "observations.csv"), observations.ToString());
             File.WriteAllText(Path.Combine(folder, "poses.csv"), poses.ToString());
@@ -213,9 +245,11 @@ namespace Workbench
                 sceneDependencyHash = AssetDatabase.GetAssetDependencyHash(scene.path).ToString(),
                 screenSizeExponent = controller.ScreenSizeExponent,
                 allocator = native ? "native-lodgroup" : exact ? "exact-cost-dp" : "greedy",
+                layout = expanded ? layout : "",
                 effectiveCaps = native ? Array.Empty<int>() : effectiveCaps
             }, true) + "\n");
-            Debug.Log($"Pilot {(native ? "native LODGroup" : exact ? "exact-cost" : "perspective")} replay: " +
+            Debug.Log($"{(expanded ? "Expanded " + layout : "Pilot")} " +
+                $"{(native ? "native LODGroup" : exact ? "exact-cost" : "perspective")} replay: " +
                 $"{config.traces.Length * config.samplesPerTrace} poses → {folder}");
         }
     }

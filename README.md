@@ -72,6 +72,14 @@ The [expanded layout fixture](Experiments/expanded-layouts.json) adds a hex nut,
 
 To regenerate the additional OBJ meshes, append `--expanded` to the mesh-generator command above. The five additional parts all use the same simplifier settings; its collapse aggressiveness is 8 rather than the pilot's 7 so the hex nut yields distinct coarse levels. Use the [measured counts](Experiments/expanded-meshes.csv), not their target ratios.
 
-Open `Assets/Workbench/Scenes/InspectionExpanded.unity` for the separated layout or `InspectionClutter.unity` for the occlusion case. Both use the same baked tables and mesh ladders. To rebuild missing scenes, run **Workbench → Bake Additional Part Silhouettes**, then **Workbench → Build Missing Expanded Scenes**. This leaves existing scenes and the original `Inspection.unity` alone. The replay menu items above are still scoped to the original pilot.
+Open `Assets/Workbench/Scenes/InspectionExpanded.unity` for the separated layout or `InspectionClutter.unity` for the occlusion case. Both use the same baked tables and mesh ladders. To rebuild missing scenes, run **Workbench → Bake Additional Part Silhouettes**, then **Workbench → Build Missing Expanded Scenes**. This leaves existing scenes and the original `Inspection.unity` alone.
+
+Run **Workbench → Run Expanded Layout Replay** in each saved scene to generate greedy and exact-cost measurements for the [shared camera protocol](Experiments/expanded-replay-config.json). Then run `python3 Tools/analyze_expanded_replay.py`. The Unity batch entry point is `Workbench.PilotReplay.RunAllExpandedBatch` (graphics required).
+
+The [eight-part report](Reports/expanded-replay.md) separates visible silhouette error, triangles spent on hidden parts, and levels forced by exact triangle sums. Regenerate it from the archived measurements without opening Unity:
+
+```sh
+python3 Tools/analyze_expanded_replay.py --run Experiments/replays/expanded-v1
+```
 
 See the [implementation and research plan](docs/superpowers/plans/2026-11-22-silhouette-budget-lod.md) for the bake, allocator, and evaluation protocol.

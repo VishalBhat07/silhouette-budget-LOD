@@ -1,0 +1,13 @@
+{
+    "unityVersion": "6000.6.9f1",
+    "graphicsApi": "Metal",
+    "sceneDependencyHash": "84bf45258c2506933f27536198a23f8e",
+    "allocator": "greedy",
+    "layout": "separated",
+    "screenSizeExponent": 2,
+    "effectiveCaps": [
+        4064,
+        6400,
+        10300
+    ]
+}
