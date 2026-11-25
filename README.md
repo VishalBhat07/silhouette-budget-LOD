@@ -29,6 +29,46 @@ Open either expanded scene and press **Play**, or choose **Workbench → Build m
 
 The interactive HUD is bypassed by the standalone timing flag. The Unity Play Mode smoke test is in `Workbench.Demo.Play.Tests`.
 
+### Play Orbital Salvage
+
+In Unity Hub, open the `SilhouetteWorkbench` project with Unity **6000.6.9f1**. Open `Assets/Workbench/Scenes/OrbitalSalvage.unity` and press **Play**.
+
+For a Linux x86-64 standalone player, install **Linux Build Support (Mono)** for that Unity version and choose **Workbench → Build Linux Orbital Salvage**. From the repository root, run:
+
+```sh
+cd Results/orbital-salvage
+./OrbitalSalvage.x86_64
+```
+
+Keep the executable with its companion files and data folder. The player opens in a 1280 × 720 window.
+
+Walk down from the observation gantry and retrieve the glowing cell on the port cargo stack. Use it to cycle the cargo lift, take it back, then carry it to engineering. Installing the cell restores emergency power. Collect the navigation core, follow the service drone through the open hatch, and use **E** at the extraction and boarding prompts.
+
+The shuttle flight lasts 7.5 seconds. Press **1** for the cockpit, **2** for the chase camera, or **Space** to pause. After landing, use **E** to disembark, follow the rover to the relay, and use **E** to install the navigation core.
+
+The 32 × 48 m dock has two routes down from the arrival overlook. Use the central stairs for the shortest route to the mission or take the starboard ramp and follow the marked service apron around the tug. Guardrails and solid machinery block movement with collision geometry that remains consistent across visual LODs.
+
+The technician uses the animated [Quaternius Astronaut](https://poly.pizza/m/3hC2i0CTuO) from the [Ultimate Space Kit](https://quaternius.com/packs/ultimatespacekit.html), released under CC0. The suit palette was adapted for the salvage crew.
+
+| Control | Action |
+|---|---|
+| WASD or arrows, Shift | Walk or sprint |
+| Hold right mouse and drag | Orbit the third-person camera |
+| Mouse wheel | Adjust follow distance |
+| E | Pick up, install, or use the nearby mission object |
+| F | Freeze or resume the comparison pose |
+| 1 / 2 / 3 | Screen size / directional silhouette / view average |
+| [ / ] | Decrease or increase the triangle cap |
+| R | Restart the mission |
+
+The allocator manages 32 placed assemblies from 12 asset families, with 13,452 triangles across their coarsest meshes and 159,484 at full detail. The scene starts with a 24,000-triangle cap for selected managed meshes in the camera frustum. The player, drone, cargo, hull cladding, architecture, and distant scenery have their own geometry. See the [asset manifest](Experiments/salvage-lod-assets.csv) for the four measured mesh costs per instance. Regenerate the meshes and tables with `python3 Tools/generate_salvage_meshes.py` and Pillow.
+
+The cutaway turbines, cargo grilles, docking clamps, finned compressors, and open heat exchangers add geometry whose gaps and profiles change at lower LOD. The fan and antenna pairs show how a different angle changes the silhouette of the same mesh.
+
+For real hardware references, see the [NASA RS-25 hardware photos on page 19](https://www.nasa.gov/wp-content/uploads/2021/05/osbp_htdb_stennis_final_may19_2021.pdf) for pipes and nozzle bands, [NASA's ISS radiator study](https://ntrs.nasa.gov/api/citations/20260005820/downloads/ICES_MARVL_STARK_v3.pdf) for truss-mounted panels, and the [Voyager antenna construction photo](https://science.nasa.gov/photojournal/voyager-antenna-dish-construction-2/) for dish profile, supports, and scale.
+
+In Editor Play Mode, **Workbench → Orbital Salvage → Measure Current View** compares all three policies at the same camera pose and cap. **Measure Dock Camera Route** samples 12 poses in each of the three areas with the current world state held fixed. Both write per-object CSVs in `Results/orbital-study/`, including actual spend, selected LOD, reference and candidate pixel counts, and mask error. An empty error field means neither image contained pixels for that part. **Render Policy Comparison** saves fixed-camera shaded PNGs for all three policies and the full-detail reference, plus the selected levels and triangle counts. For a Linux standalone player use **Workbench → Build Linux Orbital Salvage**.
+
 ### Compare the runtime policies
 
 Open `Inspection.unity`, select `Pilot Parts`, and use **Compare Policies At Current Pose** from the **Workbench Controller** component menu. The Console prints the selected level per part and actual spend for all three policies, without changing the scene. At the saved camera pose and a cap of **960 triangles**, screen size upgrades the toolbox to L1; the silhouette and view-averaged policies upgrade the gear to L1 instead. All three spend exactly 960 triangles.
