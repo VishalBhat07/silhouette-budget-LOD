@@ -1,5 +1,5 @@
 {
   "name": "Workbench.Silhouettes.Editor",
-  "references": ["Workbench.Lod"],
+  "references": ["Workbench.Lod", "Workbench.Demo"],
   "includePlatforms": ["Editor"]
 }
