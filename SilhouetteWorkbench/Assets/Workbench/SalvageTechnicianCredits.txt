@@ -1,0 +1,10 @@
+Salvage Technician mesh and locomotion animations
+Astronaut by Quaternius, Ultimate Space Kit
+Creative Commons Zero 1.0 Universal (CC0)
+Model listing: https://poly.pizza/m/3hC2i0CTuO
+Author's pack: https://quaternius.com/packs/ultimatespacekit.html
+License: https://creativecommons.org/publicdomain/zero/1.0/
+
+Converted from the publisher's GLB into Unity-compatible FBX. Includes the
+idle, walk, and run actions. Orbital Salvage adds the rescue suit palette
+and procedural two-handed grip.
