@@ -10,6 +10,8 @@ namespace Workbench
     {
         [SerializeField] Mesh[] meshes;
         [SerializeField] TextAsset silhouetteTable;
+        [SerializeField, Tooltip("Optional unique ID for instances sharing one silhouette table.")]
+        string instanceId;
 
         [Serializable]
         sealed class ViewSample
@@ -35,7 +37,7 @@ namespace Workbench
         MeshRenderer meshRenderer;
         float[] meanErrors;
 
-        public string Id => table.partId;
+        public string Id => string.IsNullOrEmpty(instanceId) ? table.partId : instanceId;
         public int FinestLevel => table.referenceLevel;
         public Mesh MeshAt(int level) => meshes[level];
         public int TrianglesAt(int level) => Costs[level];

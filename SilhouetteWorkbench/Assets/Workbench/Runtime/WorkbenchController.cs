@@ -24,6 +24,8 @@ namespace Workbench
 
         public LodSelector.Decision CurrentDecision { get; private set; }
         public int ScreenSizeExponent => screenSizeExponent;
+        public LodPolicy ActivePolicy { get => policy; set => policy = value; }
+        public int TriangleBudget { get => triangleBudget; set => triangleBudget = Mathf.Max(0, value); }
 
         void Awake() => Initialize();
 
