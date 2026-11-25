@@ -8,6 +8,48 @@ namespace Workbench
 {
     public static class BuildTimingPlayer
     {
+        [MenuItem("Workbench/Build Linux Orbital Salvage")]
+        public static void BuildSalvage()
+        {
+            var root = Directory.GetParent(Application.dataPath).Parent.FullName;
+            var folder = Path.Combine(root, "Results", "orbital-salvage");
+            Directory.CreateDirectory(folder);
+            string previousName = PlayerSettings.productName;
+            int previousWidth = PlayerSettings.defaultScreenWidth;
+            int previousHeight = PlayerSettings.defaultScreenHeight;
+            var previousMode = PlayerSettings.fullScreenMode;
+            bool previousNativeResolution = PlayerSettings.defaultIsNativeResolution;
+            bool previousResizable = PlayerSettings.resizableWindow;
+            BuildReport report;
+            try
+            {
+                PlayerSettings.productName = "Orbital Salvage";
+                PlayerSettings.defaultScreenWidth = 1280;
+                PlayerSettings.defaultScreenHeight = 720;
+                PlayerSettings.defaultIsNativeResolution = false;
+                PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+                PlayerSettings.resizableWindow = false;
+                report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+                {
+                    scenes = new[] { "Assets/Workbench/Scenes/OrbitalSalvage.unity", FlightScene.Path },
+                    target = BuildTarget.StandaloneLinux64,
+                    locationPathName = Path.Combine(folder, "OrbitalSalvage.x86_64")
+                });
+            }
+            finally
+            {
+                PlayerSettings.productName = previousName;
+                PlayerSettings.defaultScreenWidth = previousWidth;
+                PlayerSettings.defaultScreenHeight = previousHeight;
+                PlayerSettings.fullScreenMode = previousMode;
+                PlayerSettings.defaultIsNativeResolution = previousNativeResolution;
+                PlayerSettings.resizableWindow = previousResizable;
+            }
+            if (report.summary.result != BuildResult.Succeeded)
+                throw new InvalidOperationException($"Orbital Salvage build: {report.summary.result}.");
+            Debug.Log($"Built Orbital Salvage: {report.summary.outputPath}");
+        }
+
         [MenuItem("Workbench/Build macOS Timing Player")]
         public static void Build() => BuildPlayer("standalone", "SilhouetteTiming.app", true);
 
